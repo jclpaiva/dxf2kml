@@ -1,0 +1,8 @@
+streamlit
+ezdxf
+psutil
+keyboard
+GDAL
+folium
+streamlit-folium
+shapely
