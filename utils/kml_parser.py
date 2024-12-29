@@ -1,5 +1,5 @@
-import xml.etree.ElementTree as ET
 import re
+import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
 def parse_coordinates(coord_str: str) -> List[Tuple[float, float]]:

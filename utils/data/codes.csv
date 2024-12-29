@@ -1,0 +1,22 @@
+EPSG;System;Region;Projection
+3763;PT-TM06-ETRS89;Portugal Continental;Transverse Mercator
+20790;Datum Lisboa-Coordenadas Militares;Portugal Continental;Cartesiano
+20791;Datum Lisboa-Hayford-Gauss;Portugal Continental;Engenheria
+25829;ETRS89-UTM zona 29N;Portugal Continental;Engenheria
+32625;WGS 84-UTM 25N;Portugal Continental;Cartesiano 2D
+32626;WGS 84-UTM 26N;Portugal Continental;Cartesiano 2D
+32628;WGS 84-UTM 28N;Portugal Continental;Cartesiano 2D
+32629;WGS 84-UTM 29N;Portugal Continental;Cartesiano 2D
+2191;Datum Base SE - Porto Santo-UTM zona 28N;Madeira;Topographic
+5014;PTRA08-UTM zone 28N;Madeira;Transverse Mercator
+32628;WGS84-UTM zone 28N;Madeira;Transverse Mercator
+102028;ETRS89-UTM zone 28N;Madeira;Transverse Mercator
+2188;Datum Observatório - Flores (Grupo Ocidental)-UTM zona 25N;Açores;Geocentric
+2189;Datum Base SW - Graciosa (Grupo Central)-UTM zona 26N;Açores;Geocentric
+2190;Datum S. Braz - S. Miguel (Grupo Oriental)-UTM zona 26N;Açores;Geocentric
+5012;PTRA08-UTM zone 25N;Açores;Transverse Mercator
+5013;PTRA08-UTM zone 26N;Açores;Transverse Mercator
+32625;WGS84-UTM zone 25N;Açores;Transverse Mercator
+32626;WGS84-UTM zone 26N;Açores;Transverse Mercator
+102025;ETRS89-UTM zone 25N;Açores;Transverse Mercator
+102026;ETRS89-UTM zone 26N;Açores;Transverse Mercator

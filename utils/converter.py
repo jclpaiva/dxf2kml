@@ -1,6 +1,7 @@
 import ezdxf
-from osgeo import ogr, osr
+import simplekml
 import streamlit as st
+from pyproj import Transformer
 
 def get_dxf_statistics(doc):
     """Get statistics about the DXF file"""
@@ -23,7 +24,7 @@ def get_dxf_statistics(doc):
         'polylines': stats['polylines']
     }
 
-def convert_dxf_to_kml(input_file, output_file, epsg_code):
+def convert_dxf_to_kml(input_file, epsg_code):
     try:
         doc = ezdxf.readfile(input_file)
         st.info("DXF file loaded successfully.")
@@ -34,33 +35,11 @@ def convert_dxf_to_kml(input_file, output_file, epsg_code):
     except IOError:
         raise RuntimeError("Could not open DXF file. Please check the file path.")
 
-    driver_kml = ogr.GetDriverByName('KML')
-    if driver_kml is None:
-        raise RuntimeError("KML driver is not available.")
+    # Create a KML object
+    kml = simplekml.Kml()
 
-    # Set KML creation options for black lines
-    options = ['LINESTYLE_COLOR=ff000000']  # RGBA: Black color
-    kml_ds = driver_kml.CreateDataSource(output_file, options=options)
-    if kml_ds is None:
-        raise RuntimeError("Failed to create KML data source.")
-
-    srs = osr.SpatialReference()
-    if srs.ImportFromEPSG(epsg_code) != 0:
-        raise RuntimeError("Failed to import EPSG code.")
-
-    kml_layer = kml_ds.CreateLayer('DXF_Layer', srs, geom_type=ogr.wkbLineString)
-    if kml_layer is None:
-        raise RuntimeError("Failed to create KML layer.")
-
-    fields = {
-        'Layer': ogr.OFTString,
-        'SubClasses': ogr.OFTString,
-        'EntityHandle': ogr.OFTString
-    }
-    
-    for field_name, field_type in fields.items():
-        field = ogr.FieldDefn(field_name, field_type)
-        kml_layer.CreateField(field)
+    # Create a transformer to convert from the specified EPSG to WGS84 (EPSG:4326)
+    transformer = Transformer.from_crs(f"EPSG:{epsg_code}", "EPSG:4326", always_xy=True)
 
     entity_count = 0
     progress_bar = st.progress(0)
@@ -68,25 +47,30 @@ def convert_dxf_to_kml(input_file, output_file, epsg_code):
     
     for entity in doc.modelspace():
         if entity.dxftype() == 'LWPOLYLINE':
-            line = ogr.Geometry(ogr.wkbLineString)
+            # Extract vertices from the polyline and transform them to WGS84
+            points = []
             for point in entity.vertices():
-                line.AddPoint(point[0], point[1])
-
-            feature = ogr.Feature(kml_layer.GetLayerDefn())
-            feature.SetGeometry(line)
+                x, y = point[0], point[1]
+                lon, lat = transformer.transform(x, y)  # Transform coordinates
+                points.append((lon, lat))  # KML expects (longitude, latitude)
             
-            feature.SetField('Layer', getattr(entity.dxf, 'layer', 'Unknown'))
-            feature.SetField('SubClasses', 'AcDbEntity:AcDbPolyline')
-            feature.SetField('EntityHandle', getattr(entity.dxf, 'handle', 'Unknown'))
-
-            kml_layer.CreateFeature(feature)
+            # Create a LineString in the KML
+            line = kml.newlinestring(name=f"Polyline {entity_count + 1}", coords=points)
+            line.style.linestyle.color = simplekml.Color.blue  # Blue color
+            line.style.linestyle.width = 2  # Line thickness
+            
+            # Add structured metadata using ExtendedData
+            extended_data = simplekml.ExtendedData()
+            extended_data.newdata(name="Layer", value=getattr(entity.dxf, 'layer', 'Unknown'))
+            extended_data.newdata(name="SubClasses", value="AcDbEntity:AcDbPolyline")
+            extended_data.newdata(name="EntityHandle", value=getattr(entity.dxf, 'handle', 'Unknown'))
+            line.extendeddata = extended_data
             
             entity_count += 1
             progress_bar.progress(entity_count / total_entities if total_entities > 0 else 0)
 
-    kml_ds = None
-
     if entity_count == 0:
         raise RuntimeError("No valid entities found in the DXF file.")
 
-    return stats
+    # Return the KML content as a string
+    return kml.kml(), stats

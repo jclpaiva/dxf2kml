@@ -1,10 +1,11 @@
+import os
+import tempfile
 import streamlit as st
 from utils.converter import convert_dxf_to_kml
 from utils.preview import preview_kml
 from utils.styles import apply_custom_styles
 from utils.actions import exit_application, handle_reset
-import tempfile
-import os
+from utils.epsg_selector import get_epsg_options
 
 st.set_page_config(
     page_title="DXF to KML Converter",
@@ -13,13 +14,9 @@ st.set_page_config(
 
 def main():
     apply_custom_styles()
-    
+
     st.title("DXF to KML Converter")
     st.write("Convert DXF files to KML format with EPSG transformation.")
-    
-    # Add exit button at the top
-    if st.button("Exit Application", type="secondary"):
-        exit_application()
     
     # File uploader with unique key
     dxf_file = st.file_uploader(
@@ -32,11 +29,8 @@ def main():
         dxf_filename = dxf_file.name
         output_file = dxf_filename[:-4] + ".kml" if dxf_filename.lower().endswith(".dxf") else dxf_filename + ".kml"
         
-        epsg_options = {
-            "Portugal Mainland: 3763": 3763,
-            "Madeira: 32767": 32767,
-            "Azores: 32768": 32768
-        }
+        # Get EPSG options from the new module
+        epsg_options = get_epsg_options()
         epsg_choice = st.selectbox("Select EPSG code", list(epsg_options.keys()))
         epsg_code = epsg_options[epsg_choice]
 
@@ -53,7 +47,13 @@ def main():
                             temp_dxf.close()
 
                         try:
-                            stats = convert_dxf_to_kml(temp_dxf.name, output_file, epsg_code)
+                            # Convert DXF to KML and get the KML content as a string
+                            kml_content, stats = convert_dxf_to_kml(temp_dxf.name, epsg_code)
+                            
+                            # Save the KML content to the output file
+                            with open(output_file, "w", encoding="utf-8") as kml_file:
+                                kml_file.write(kml_content)
+                            
                             st.success(f"Conversion successful! File saved as {output_file}")
                             
                             # Preview KML
@@ -67,8 +67,9 @@ def main():
                     st.error("Please upload a DXF file.")
         
         with col2:
-            if st.button("Reset", type="secondary", use_container_width=True):
-                handle_reset()
+            # Add exit button at the top
+            if st.button("Exit Application", type="secondary", use_container_width=True):
+                exit_application()            
 
 if __name__ == "__main__":
     main()
